@@ -15,6 +15,7 @@ static aa* new_aa(aa* left, aa* right, void* payload, int level){
   ptr->payload = payload;
   ptr->level = level;
 
+puts("new");
   return ptr;
 }
 
@@ -25,6 +26,7 @@ static aa* copy_aa(aa* tree){
 static void trash_aa(aa* tree){
   /* put tree in garbage list */
   if(tree != NULL){
+puts("trash");
   }
 }
 
@@ -274,6 +276,20 @@ int cmp_char(void* v1, void* v2){
   return *c1 - *c2;
 }
 
+/*
+tests
+
+1 insert lots of things
+2 insert into the same location more than once
+3 find thing that is there
+4 find thing that is not there
+5 delete thing that is in a leaf
+6 delete thing that is in the middle
+7 delete thing that is not there
+
+do 1 2 3 4 5 6 7 in several orders
+*/
+
 int main(){
   aa* tree = NULL;
 
@@ -290,13 +306,13 @@ int main(){
   puts("");
   puts("inserted 50 things");
 
-  printf("searching for @: %p\n", aa_find(tree, new_payload('@'), cmp_char));
+  printf("searching for $: %p\n", aa_find(tree, new_payload('$'), cmp_char));
 
-  tree = aa_delete(tree, new_payload('@'), cmp_char);
+  tree = aa_delete(tree, new_payload('$'), cmp_char);
 
   print_aa(tree);
   puts("");
-  puts("deleted @");
+  puts("deleted $");
 
-  printf("searching for @: %p\n", aa_find(tree, new_payload('@'), cmp_char));
+  printf("searching for $: %p\n", aa_find(tree, new_payload('$'), cmp_char));
 }
