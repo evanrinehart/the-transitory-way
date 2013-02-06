@@ -22,18 +22,17 @@ aa* new_aa(aa* left, aa* right, void* payload, int level){
   ptr->payload = payload;
   ptr->level = level;
 
-  puts("mallocing a new tree node");
   return ptr;
 }
 
 aa* copy_aa(aa* tree){
-  puts("copying a tree node");
   return new_aa(tree->left, tree->right, tree->payload, tree->level);
 }
 
 void trash_aa(aa* tree){
   /* put tree in garbage list */
-  puts("trashing a tree node");
+  if(tree != NULL){
+  }
 }
 
 aa* skew(aa* tree){
@@ -86,21 +85,24 @@ aa* split(aa* tree){
 }
 
 aa* decrease_level(aa* tree){
+  int l1;
+  int l2;
   int should_be;
   aa* t2;
   aa* r2;
 
-  should_be = 1 +
-    (
-        tree->left->level < tree->right->level
-      ? tree->left->level
-      : tree->right->level
-    );
+  if(tree == NULL){
+    abort(); /* do not decrease level on empty tree */
+  }
+
+  l1 = tree->left==NULL ? 0 : tree->left->level;
+  l2 = tree->right==NULL ? 0 : tree->right->level;
+  should_be = (l1 < l2 ? l1 : l2) + 1;
 
   if(should_be < tree->level){
     t2 = copy_aa(tree);
     t2->level = should_be;
-    if(should_be < tree->right->level){
+    if(tree->right != NULL && should_be < tree->right->level){
       r2 = copy_aa(tree->right);
       r2->level = should_be;
       trash_aa(tree->right);
@@ -139,7 +141,7 @@ void* predecessor(aa* tree){
   }
 }
 
-aa* insert(aa* tree, void* key, void* payload, cmp_func compare){
+aa* insert(aa* tree, void* payload, cmp_func compare){
   aa* node1;
   aa* node2;
   aa* node3;
@@ -147,15 +149,15 @@ aa* insert(aa* tree, void* key, void* payload, cmp_func compare){
   if(tree == NULL){
     return new_aa(NULL, NULL, payload, 1);
   }
-  else if(compare(tree->payload, key) < 0){
+  else if(compare(tree->payload, payload) < 0){
     node1 = copy_aa(tree);
-    node1->left = insert(tree->left, key, payload, compare);
-    trash_aa(tree->left);
+    node1->left = insert(tree->left, payload, compare);
+    trash_aa(tree);
   }
-  else if(compare(tree->payload, key) > 0){
+  else if(compare(tree->payload, payload) > 0){
     node1 = copy_aa(tree);
-    node1->right = insert(tree->right, key, payload, compare);
-    trash_aa(tree->right);
+    node1->right = insert(tree->right, payload, compare);
+    trash_aa(tree);
   }
   else{
     node1 = copy_aa(tree);
@@ -184,12 +186,12 @@ aa* delete(aa* tree, void* key, cmp_func compare){
   else{
     diff = compare(tree->payload, key);
 
-    if(diff < 0){
+    if(diff > 0){
       node1 = copy_aa(tree);
       node1->right = delete(tree->right, key, compare);
       trash_aa(tree);
     }
-    else if(diff > 0){
+    else if(diff < 0){
       node1 = copy_aa(tree);
       node1->left = delete(tree->left, key, compare);
       trash_aa(tree);
@@ -219,7 +221,9 @@ aa* delete(aa* tree, void* key, cmp_func compare){
   node2 = decrease_level(node1);
   node3 = skew(node2);
   node3->right = skew(node3->right);
-  node3->right->right = skew(node3->right->right);
+  if(node3->right != NULL){
+    node3->right->right = skew(node3->right->right);
+  }
   node4 = split(node3);
   node4->right = split(node4->right);
 
@@ -246,3 +250,55 @@ void* find(aa* tree, void* key, cmp_func compare){
   }
 }
 
+void print_aa(aa* tree){
+  if(tree != NULL){
+    printf("([%c] %d ", *((char*)tree->payload), tree->level);
+    printf("L");
+    print_aa(tree->left);
+    printf(" R");
+    print_aa(tree->right);
+    printf(")");
+  }
+  else{
+    printf("()");
+  }
+}
+
+char* new_payload(char c){
+  char* ptr = malloc(1);
+  *ptr = c;
+  return ptr;
+}
+
+int cmp_char(void* v1, void* v2){
+  char* c1 = v1;
+  char* c2 = v2;
+  return *c1 - *c2;
+}
+
+int main(){
+  aa* tree = NULL;
+
+  puts("OK");
+
+  int i;
+  int c = 33;
+  for(i=0; i<50; i++){
+    tree = insert(tree, new_payload(c), cmp_char);
+    c++;
+  }
+
+  print_aa(tree);
+  puts("");
+  puts("inserted 50 things");
+
+  printf("searching for @: %p\n", find(tree, new_payload('@'), cmp_char));
+
+  tree = delete(tree, new_payload('@'), cmp_char);
+
+  print_aa(tree);
+  puts("");
+  puts("deleted @");
+
+  printf("searching for @: %p\n", find(tree, new_payload('@'), cmp_char));
+}
