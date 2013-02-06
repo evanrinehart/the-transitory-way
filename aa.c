@@ -134,29 +134,34 @@ static void* predecessor(aa* tree){
   }
 }
 
-aa* aa_insert(aa* tree, void* payload, cmp_func compare){
+aa* aa_insert(aa* tree, void* item, cmp_func compare){
   aa* node1;
   aa* node2;
   aa* node3;
+  int diff;
 
   if(tree == NULL){
-    return new_aa(NULL, NULL, payload, 1);
-  }
-  else if(compare(tree->payload, payload) < 0){
-    node1 = copy_aa(tree);
-    node1->left = aa_insert(tree->left, payload, compare);
-    trash_aa(tree);
-  }
-  else if(compare(tree->payload, payload) > 0){
-    node1 = copy_aa(tree);
-    node1->right = aa_insert(tree->right, payload, compare);
-    trash_aa(tree);
+    return new_aa(NULL, NULL, item, 1);
   }
   else{
-    node1 = copy_aa(tree);
-    node1->payload = payload;
-    trash_aa(tree);
-    return node1;
+    diff = compare(tree->payload, item);
+
+    if(diff < 0){
+      node1 = copy_aa(tree);
+      node1->left = aa_insert(tree->left, item, compare);
+      trash_aa(tree);
+    }
+    else if(diff > 0){
+      node1 = copy_aa(tree);
+      node1->right = aa_insert(tree->right, item, compare);
+      trash_aa(tree);
+    }
+    else{
+      node1 = copy_aa(tree);
+      node1->payload = item;
+      trash_aa(tree);
+      return node1;
+    }
   }
 
   node2 = skew(node1);
@@ -165,7 +170,7 @@ aa* aa_insert(aa* tree, void* payload, cmp_func compare){
   return node3;
 }
 
-aa* aa_delete(aa* tree, void* key, cmp_func compare){
+aa* aa_delete(aa* tree, void* item, cmp_func compare){
   void* x;
   int diff;
   aa* node1;
@@ -177,16 +182,16 @@ aa* aa_delete(aa* tree, void* key, cmp_func compare){
     return NULL;
   }
   else{
-    diff = compare(tree->payload, key);
+    diff = compare(tree->payload, item);
 
     if(diff > 0){
       node1 = copy_aa(tree);
-      node1->right = aa_delete(tree->right, key, compare);
+      node1->right = aa_delete(tree->right, item, compare);
       trash_aa(tree);
     }
     else if(diff < 0){
       node1 = copy_aa(tree);
-      node1->left = aa_delete(tree->left, key, compare);
+      node1->left = aa_delete(tree->left, item, compare);
       trash_aa(tree);
     }
     else{
@@ -223,19 +228,19 @@ aa* aa_delete(aa* tree, void* key, cmp_func compare){
   return node4;
 }
 
-void* aa_find(aa* tree, void* key, cmp_func compare){
+void* aa_find(aa* tree, void* item, cmp_func compare){
   int diff;
 
   if(tree == NULL){
     return NULL;
   }
   else{
-    diff = compare(tree->payload, key);
+    diff = compare(tree->payload, item);
     if(diff < 0){
-      return aa_find(tree->left, key, compare);
+      return aa_find(tree->left, item, compare);
     }
     else if(diff > 0){
-      return aa_find(tree->right, key, compare);
+      return aa_find(tree->right, item, compare);
     }
     else{
       return tree->payload;
