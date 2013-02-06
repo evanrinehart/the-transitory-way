@@ -1,16 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-typedef struct aa {
-  struct aa* left;
-  struct aa* right;
-  void* payload;
-  int level;
-} aa;
+#include <aa.h>
 
-typedef int cmp_func(void* a, void* b);
-
-aa* new_aa(aa* left, aa* right, void* payload, int level){
+static aa* new_aa(aa* left, aa* right, void* payload, int level){
   aa* ptr = malloc(sizeof(struct aa));
 
   if(ptr == NULL){
@@ -25,17 +18,17 @@ aa* new_aa(aa* left, aa* right, void* payload, int level){
   return ptr;
 }
 
-aa* copy_aa(aa* tree){
+static aa* copy_aa(aa* tree){
   return new_aa(tree->left, tree->right, tree->payload, tree->level);
 }
 
-void trash_aa(aa* tree){
+static void trash_aa(aa* tree){
   /* put tree in garbage list */
   if(tree != NULL){
   }
 }
 
-aa* skew(aa* tree){
+static aa* skew(aa* tree){
   aa* l2;
   aa* t2;
 
@@ -59,7 +52,7 @@ aa* skew(aa* tree){
   }
 }
 
-aa* split(aa* tree){
+static aa* split(aa* tree){
   aa* t2;
   aa* r2;
 
@@ -84,7 +77,7 @@ aa* split(aa* tree){
   }
 }
 
-aa* decrease_level(aa* tree){
+static aa* decrease_level(aa* tree){
   int l1;
   int l2;
   int should_be;
@@ -115,7 +108,7 @@ aa* decrease_level(aa* tree){
   }
 }
 
-void* successor(aa* tree){
+static void* successor(aa* tree){
   aa* ptr = tree->right;
   if(ptr == NULL){
     abort(); /* do not use successor on leaf node */
@@ -128,7 +121,7 @@ void* successor(aa* tree){
   }
 }
 
-void* predecessor(aa* tree){
+static void* predecessor(aa* tree){
   aa* ptr = tree->left;
   if(ptr == NULL){
     abort(); /* do not use predecessor on leaf node */
@@ -141,7 +134,7 @@ void* predecessor(aa* tree){
   }
 }
 
-aa* insert(aa* tree, void* payload, cmp_func compare){
+aa* aa_insert(aa* tree, void* payload, cmp_func compare){
   aa* node1;
   aa* node2;
   aa* node3;
@@ -151,12 +144,12 @@ aa* insert(aa* tree, void* payload, cmp_func compare){
   }
   else if(compare(tree->payload, payload) < 0){
     node1 = copy_aa(tree);
-    node1->left = insert(tree->left, payload, compare);
+    node1->left = aa_insert(tree->left, payload, compare);
     trash_aa(tree);
   }
   else if(compare(tree->payload, payload) > 0){
     node1 = copy_aa(tree);
-    node1->right = insert(tree->right, payload, compare);
+    node1->right = aa_insert(tree->right, payload, compare);
     trash_aa(tree);
   }
   else{
@@ -172,7 +165,7 @@ aa* insert(aa* tree, void* payload, cmp_func compare){
   return node3;
 }
 
-aa* delete(aa* tree, void* key, cmp_func compare){
+aa* aa_delete(aa* tree, void* key, cmp_func compare){
   void* x;
   int diff;
   aa* node1;
@@ -188,12 +181,12 @@ aa* delete(aa* tree, void* key, cmp_func compare){
 
     if(diff > 0){
       node1 = copy_aa(tree);
-      node1->right = delete(tree->right, key, compare);
+      node1->right = aa_delete(tree->right, key, compare);
       trash_aa(tree);
     }
     else if(diff < 0){
       node1 = copy_aa(tree);
-      node1->left = delete(tree->left, key, compare);
+      node1->left = aa_delete(tree->left, key, compare);
       trash_aa(tree);
     }
     else{
@@ -204,14 +197,14 @@ aa* delete(aa* tree, void* key, cmp_func compare){
       else if(tree->left == NULL){
         x = successor(tree);
         node1 = copy_aa(tree);
-        node1->right = delete(tree->right, x, compare);
+        node1->right = aa_delete(tree->right, x, compare);
         node1->payload = x;
         trash_aa(tree);
       }
       else{
         x = predecessor(tree);
         node1 = copy_aa(tree);
-        node1->left = delete(tree->left, x, compare);
+        node1->left = aa_delete(tree->left, x, compare);
         node1->payload = x;
         trash_aa(tree);
       }
@@ -230,7 +223,7 @@ aa* delete(aa* tree, void* key, cmp_func compare){
   return node4;
 }
 
-void* find(aa* tree, void* key, cmp_func compare){
+void* aa_find(aa* tree, void* key, cmp_func compare){
   int diff;
 
   if(tree == NULL){
@@ -239,10 +232,10 @@ void* find(aa* tree, void* key, cmp_func compare){
   else{
     diff = compare(tree->payload, key);
     if(diff < 0){
-      return find(tree->left, key, compare);
+      return aa_find(tree->left, key, compare);
     }
     else if(diff > 0){
-      return find(tree->right, key, compare);
+      return aa_find(tree->right, key, compare);
     }
     else{
       return tree->payload;
@@ -284,7 +277,7 @@ int main(){
   int i;
   int c = 33;
   for(i=0; i<50; i++){
-    tree = insert(tree, new_payload(c), cmp_char);
+    tree = aa_insert(tree, new_payload(c), cmp_char);
     c++;
   }
 
@@ -292,13 +285,13 @@ int main(){
   puts("");
   puts("inserted 50 things");
 
-  printf("searching for @: %p\n", find(tree, new_payload('@'), cmp_char));
+  printf("searching for @: %p\n", aa_find(tree, new_payload('@'), cmp_char));
 
-  tree = delete(tree, new_payload('@'), cmp_char);
+  tree = aa_delete(tree, new_payload('@'), cmp_char);
 
   print_aa(tree);
   puts("");
   puts("deleted @");
 
-  printf("searching for @: %p\n", find(tree, new_payload('@'), cmp_char));
+  printf("searching for @: %p\n", aa_find(tree, new_payload('@'), cmp_char));
 }
